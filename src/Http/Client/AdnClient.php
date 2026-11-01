@@ -22,36 +22,17 @@ use Nfse\Support\SefinEndpointResolver;
 
 class AdnClient implements AdnDanfseInterface
 {
+    use UsesClientCertificate;
+
     private const URL_PRODUCTION = 'https://adn.nfse.gov.br';
 
     private const URL_HOMOLOGATION = 'https://adn.producaorestrita.nfse.gov.br';
 
     private Client $httpClient;
 
-    private ?string $tempCertFile = null;
-
     public function __construct(private NfseContext $context)
     {
         $this->httpClient = $this->createHttpClient();
-    }
-
-    public function __destruct()
-    {
-        if ($this->tempCertFile !== null && file_exists($this->tempCertFile)) {
-            unlink($this->tempCertFile);
-        }
-    }
-
-    private function resolveCertificatePath(): string
-    {
-        if ($this->context->certificatePath !== null) {
-            return $this->context->certificatePath;
-        }
-
-        $this->tempCertFile = tempnam(sys_get_temp_dir(), 'nfse_cert_');
-        file_put_contents($this->tempCertFile, $this->context->certificateContent);
-
-        return $this->tempCertFile;
     }
 
     private function createHttpClient(): Client
@@ -70,16 +51,7 @@ class AdnClient implements AdnDanfseInterface
             // Endpoints municipais publicados por IP: o nome do certificado é fixado
             // no IP original para que a verificação de host funcione.
             CURLOPT_RESOLVE => SefinEndpointResolver::pinnedHosts(),
-        ];
-
-        if ($this->context->nssCertificateSelector !== null) {
-            $curlOptions[CURLOPT_SSLCERTTYPE] = 'ENG';
-            $curlOptions[CURLOPT_SSLCERT] = $this->context->nssCertificateSelector;
-        } else {
-            $curlOptions[CURLOPT_SSLCERTTYPE] = 'P12';
-            $curlOptions[CURLOPT_SSLCERT] = $this->resolveCertificatePath();
-            $curlOptions[CURLOPT_SSLCERTPASSWD] = $this->context->certificatePassword;
-        }
+        ] + $this->clientCertificateCurlOptions();
 
         return new Client([
             'base_uri' => $baseUrl,

@@ -1,0 +1,5 @@
+# Mínimo para gerar certificado de teste onde o PHP não acha um openssl.cnf.
+[req]
+distinguished_name = dn
+
+[dn]
