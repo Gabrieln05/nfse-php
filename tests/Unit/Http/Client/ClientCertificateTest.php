@@ -8,7 +8,7 @@ use Nfse\Http\Client\CncClient;
 use Nfse\Http\Client\SefinClient;
 use Nfse\Http\NfseContext;
 use PHPUnit\Framework\TestCase;
-use ReflectionClass;
+use ReflectionMethod;
 
 class ClientCertificateTest extends TestCase
 {
@@ -21,8 +21,7 @@ class ClientCertificateTest extends TestCase
         );
 
         foreach ([new AdnClient($context), new CncClient($context), new SefinClient($context)] as $client) {
-            $httpClient = (new ReflectionClass($client))->getProperty('httpClient')->getValue($client);
-            $curlOptions = $httpClient->getConfig('curl');
+            $curlOptions = (new ReflectionMethod($client, 'clientCertificateCurlOptions'))->invoke($client);
 
             $this->assertSame('ENG', $curlOptions[CURLOPT_SSLCERTTYPE]);
             $this->assertSame($selector, $curlOptions[CURLOPT_SSLCERT]);

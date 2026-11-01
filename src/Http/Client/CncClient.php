@@ -9,7 +9,6 @@ use Nfse\Dto\Http\MensagemProcessamentoDto;
 use Nfse\Enums\TipoAmbiente;
 use Nfse\Http\Exceptions\NfseApiException;
 use Nfse\Http\NfseContext;
-use Nfse\Http\Retry;
 
 class CncClient
 {
@@ -32,24 +31,7 @@ class CncClient
             ? self::URL_PRODUCTION
             : self::URL_HOMOLOGATION;
 
-        $curlOptions = [
-            CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
-            // Com o Retry (3 tentativas), um host inacessível segura a requisição
-            // por até 3x o connect timeout; 10s basta para o handshake.
-            CURLOPT_CONNECTTIMEOUT => 10,
-            CURLOPT_TIMEOUT => 60,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-        ] + $this->clientCertificateCurlOptions();
-
-        return new Client([
-            'base_uri' => $baseUrl,
-            'handler' => Retry::stack(),
-            'curl' => $curlOptions,
-            RequestOptions::HEADERS => [
-                'Content-Type' => 'application/json',
-                'Accept' => 'application/json',
-            ],
-        ]);
+        return new Client(['base_uri' => $baseUrl] + $this->httpClientOptions());
     }
 
     private function get(string $endpoint): array

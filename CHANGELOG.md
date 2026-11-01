@@ -17,6 +17,10 @@ Só existe este leiaute: a DPS deixa de sair no formato da NT 004.
     `EnderecoImovelData`.
 -   Com `certificateContent`, o PFX vai para o cURL em memória (`CURLOPT_SSLCERT_BLOB`) nos
     três clients. Acabou o arquivo temporário, que ficava para trás se o processo morresse.
+-   Os três clients voltam a fazer requisição no Guzzle 8, que recusa no array `curl` tudo o
+    que tem opção própria e o que está fora da lista dele: nenhuma chamada saía. Tempos,
+    IPv4 e HTTP 1.1 vão pelas opções do Guzzle, e o certificado entra direto no handle por
+    `ClientCertificateCurlFactory`, ainda em memória.
 
 -   `indDest` e `dest` saem de `IBSCBS` e vão para a raiz de `infDPS`, depois de `toma`
     (NT 009 v1.01, item 2.11). `indDest` sai em toda DPS, com padrão `0`.

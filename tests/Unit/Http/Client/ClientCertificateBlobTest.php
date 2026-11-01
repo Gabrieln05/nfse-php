@@ -1,5 +1,6 @@
 <?php
 
+use GuzzleHttp\Exception\GuzzleException;
 use Nfse\Enums\TipoAmbiente;
 use Nfse\Http\Client\AdnClient;
 use Nfse\Http\Client\CncClient;
@@ -22,19 +23,16 @@ function certificadoDeTeste(string $nome): array
     return ['cert' => $cert, 'pem' => $cert.$pem, 'pfx' => $pfx];
 }
 
-function opcoesCurlDoCliente(object $cliente): array
+function opcoesDoCertificado(object $cliente): array
 {
-    $propriedade = new ReflectionProperty($cliente, 'httpClient');
-    $propriedade->setAccessible(true);
-
-    return $propriedade->getValue($cliente)->getConfig('curl');
+    return (new ReflectionMethod($cliente, 'clientCertificateCurlOptions'))->invoke($cliente);
 }
 
 it('sends the PFX content to cURL without touching the disk', function (string $classe) {
     $antes = glob(sys_get_temp_dir().DIRECTORY_SEPARATOR.'nfse_cert_*');
 
     $contexto = new NfseContext(TipoAmbiente::Homologacao, certificatePassword: 'senha', certificateContent: 'bytes do pfx');
-    $curl = opcoesCurlDoCliente(new $classe($contexto));
+    $curl = opcoesDoCertificado(new $classe($contexto));
 
     expect($curl[CURLOPT_SSLCERT_BLOB])->toBe('bytes do pfx')
         ->and($curl[CURLOPT_SSLCERTTYPE])->toBe('P12')
@@ -49,13 +47,15 @@ it('sends the PFX content to cURL without touching the disk', function (string $
 
 it('keeps using the file when a path is informed', function () {
     $contexto = new NfseContext(TipoAmbiente::Homologacao, 'caminho/do.pfx', 'senha');
-    $curl = opcoesCurlDoCliente(new SefinClient($contexto));
+    $curl = opcoesDoCertificado(new SefinClient($contexto));
 
     expect($curl[CURLOPT_SSLCERT])->toBe('caminho/do.pfx')
         ->and($curl)->not->toHaveKey(CURLOPT_SSLCERT_BLOB);
 });
 
-it('authenticates in mutual TLS with the PFX in memory', function (string $senha, ?string $esperado) {
+// Passa pelo cliente Guzzle de verdade: montar o cURL à mão aqui escondeu que o Guzzle 8
+// recusava todas as opções, e nenhuma requisição saía.
+it('authenticates in mutual TLS through the real client, with the PFX in memory', function (string $classe, string $senha, ?string $esperado) {
     $servidor = certificadoDeTeste('localhost');
     $cliente = certificadoDeTeste('Prestador de Teste');
 
@@ -74,13 +74,15 @@ it('authenticates in mutual TLS with the PFX in memory', function (string $senha
         $porta = (int) fgets($tubos[1]);
 
         $contexto = new NfseContext(TipoAmbiente::Homologacao, certificatePassword: $senha, certificateContent: $cliente['pfx']);
-        $opcoes = array_diff_key(opcoesCurlDoCliente(new SefinClient($contexto)), [CURLOPT_RESOLVE => true]);
+        $http = (new ReflectionProperty($classe, 'httpClient'))->getValue(new $classe($contexto));
 
-        $curl = curl_init("https://localhost:{$porta}/");
-        curl_setopt_array($curl, $opcoes + [CURLOPT_CAINFO => $pemServidor, CURLOPT_RETURNTRANSFER => true]);
-        $resposta = curl_exec($curl);
+        try {
+            $resposta = (string) $http->get("https://localhost:{$porta}/", ['verify' => $pemServidor])->getBody();
+        } catch (GuzzleException) {
+            $resposta = null;
+        }
 
-        expect($resposta === false ? null : $resposta)->toBe($esperado);
+        expect($resposta)->toBe($esperado);
     } finally {
         proc_terminate($processo);
         proc_close($processo);
@@ -88,6 +90,10 @@ it('authenticates in mutual TLS with the PFX in memory', function (string $senha
         unlink($pemCliente);
     }
 })->with([
+    'SEFIN' => [SefinClient::class],
+    'ADN' => [AdnClient::class],
+    'CNC' => [CncClient::class],
+])->with([
     'senha certa' => ['senha', 'Prestador de Teste'],
     'senha errada' => ['errada', null],
 ])->skipOnWindows();

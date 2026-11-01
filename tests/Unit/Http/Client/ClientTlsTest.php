@@ -12,7 +12,9 @@ function curlOptionsDoClient(object $client): array
     $property = new ReflectionProperty($client, 'httpClient');
     $property->setAccessible(true);
 
-    return $property->getValue($client)->getConfig('curl');
+    $certificado = (new ReflectionMethod($client, 'clientCertificateCurlOptions'))->invoke($client);
+
+    return ($property->getValue($client)->getConfig('curl') ?? []) + $certificado;
 }
 
 function contextoTls(): NfseContext
@@ -24,7 +26,8 @@ it('keeps TLS peer and host verification enabled', function (string $clientClass
     $curl = curlOptionsDoClient(new $clientClass(contextoTls()));
 
     expect($curl)->not->toHaveKey(CURLOPT_SSL_VERIFYPEER)
-        ->and($curl)->not->toHaveKey(CURLOPT_SSL_VERIFYHOST);
+        ->and($curl)->not->toHaveKey(CURLOPT_SSL_VERIFYHOST)
+        ->and((new ReflectionProperty($clientClass, 'httpClient'))->getValue(new $clientClass(contextoTls()))->getConfig('verify'))->toBeTrue();
 })->with([
     'SEFIN' => [SefinClient::class],
     'ADN' => [AdnClient::class],
