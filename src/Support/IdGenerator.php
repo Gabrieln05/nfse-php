@@ -17,7 +17,8 @@ class IdGenerator
      */
     public static function generateDpsId(string $cpfCnpj, string $codIbge, string $serieDps, string|int $numDps): string
     {
-        $cpfCnpj = preg_replace('/\D/', '', $cpfCnpj);
+        // O CNPJ alfanumérico entra no Id com as letras: 2[0-9A-Z]{14} em TSIdDPS.
+        $cpfCnpj = preg_replace('/[^0-9A-Z]/', '', strtoupper($cpfCnpj));
 
         $string = 'DPS';
         $string .= substr($codIbge, 0, 7); // Cód.Mun. (7)

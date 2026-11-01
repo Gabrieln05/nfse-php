@@ -35,3 +35,8 @@ it('can generate a valid DPS ID for CNPJ', function () {
     expect($id)->toBe($expected);
     expect(strlen($id))->toBe(45);
 });
+
+it('keeps the letters of an alphanumeric CNPJ', function () {
+    expect(IdGenerator::generateDpsId('12.ABC.345/01DE-35', '2927408', '1', '7'))
+        ->toBe('DPS2927408212ABC34501DE3500001000000000000007');
+});
