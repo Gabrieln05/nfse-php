@@ -3,7 +3,6 @@
 namespace Nfse\Dto\Nfse;
 
 use Nfse\Dto\Dto;
-use Nfse\Enums\IndicadorDestinatario;
 use Nfse\Enums\TipoEnteGovernamental;
 use Nfse\Enums\TipoOperacaoRtc;
 use Nfse\Support\DTO\ArrayCaster;
@@ -50,23 +49,16 @@ class IbscbsData extends Dto
     public ?TipoEnteGovernamental $tipoEnteGovernamental = null;
 
     /**
-     * A respeito do destinatário dos serviços.
-     */
-    #[MapFrom('indDest'), CastWith(EnumCaster::class, enumType: IndicadorDestinatario::class)]
-    public ?IndicadorDestinatario $indicadorDestinatario = null;
-
-    /**
-     * Dados do destinatário do serviço.
-     * Só deve ser identificado quando indDest = 1.
-     */
-    #[MapFrom('dest')]
-    public ?TomadorData $destinatario = null;
-
-    /**
      * Informações de operações relacionadas a bens imóveis, exceto obras.
      */
     #[MapFrom('imovel')]
     public ?ImovelData $imovel = null;
+
+    /**
+     * Informações das operações de condomínios (subitem 99.05).
+     */
+    #[MapFrom('condominios')]
+    public ?CondominioData $condominios = null;
 
     /**
      * Documentos referenciados de reembolso, repasse ou ressarcimento.

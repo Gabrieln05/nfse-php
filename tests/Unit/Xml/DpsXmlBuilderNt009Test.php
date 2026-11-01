@@ -77,7 +77,6 @@ it('writes finNFSe after cMotivoEmisTI', function () {
 it('reads the IBS and CBS classification back from the NT 009 layout', function () {
     $dps = dpsLeiauteNt009('0');
     $dps->infDps->ibscbs = new IbscbsData([
-        'indDest' => 0,
         'valores' => ['trib' => ['CST' => '200', 'cClassTrib' => '200046']],
         'imovel' => ['cMun' => '3550308', 'gUnidImob' => ['end' => ['CEP' => '01001000', 'xLgr' => 'Rua A', 'nro' => '1']]],
     ]);

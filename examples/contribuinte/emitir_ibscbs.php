@@ -99,7 +99,6 @@ try {
             'IBSCBS' => [
                 'finNFSe' => '0', // NFS-e regular
                 'cIndOp' => '010101', // Código indicador da operação (Anexo VII)
-                'indDest' => 0, // O destinatário é o próprio tomador
                 'valores' => [
                     'trib' => [
                         'gIBSCBS' => [

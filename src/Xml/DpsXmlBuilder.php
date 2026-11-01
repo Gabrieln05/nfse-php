@@ -4,6 +4,7 @@ namespace Nfse\Xml;
 
 use DOMDocument;
 use DOMElement;
+use Nfse\Dto\Nfse\CondominioData;
 use Nfse\Dto\Nfse\DpsData;
 use Nfse\Dto\Nfse\EnderecoData;
 use Nfse\Dto\Nfse\IbscbsData;
@@ -21,6 +22,9 @@ class DpsXmlBuilder
 {
     /** TSRTCFinNFSe só tem um valor: 0 = NFS-e regular. */
     private const FIN_NFSE_REGULAR = '0';
+
+    /** O destinatário é o próprio tomador. */
+    private const IND_DEST_TOMADOR = '0';
 
     private DOMDocument $dom;
 
@@ -74,6 +78,26 @@ class DpsXmlBuilder
 
         if ($data->tomador) {
             $this->buildTomador($parent, $data->tomador);
+        }
+
+        // Obrigatório na raiz da DPS desde a NT 009 v1.01, que o tirou de IBSCBS.
+        $this->appendElement($parent, 'indDest', $data->indicadorDestinatario ?? self::IND_DEST_TOMADOR);
+
+        if ($data->destinatario) {
+            $dest = $this->dom->createElement('dest');
+            $this->appendElement($dest, 'CNPJ', $data->destinatario->cnpj);
+            $this->appendElement($dest, 'CPF', $data->destinatario->cpf);
+            $this->appendElement($dest, 'NIF', $data->destinatario->nif);
+            $this->appendElement($dest, 'cNaoNIF', $data->destinatario->codigoNaoNif);
+            $this->appendElement($dest, 'xNome', $data->destinatario->nome);
+
+            if ($data->destinatario->endereco) {
+                $this->buildEndereco($dest, $data->destinatario->endereco);
+            }
+
+            $this->appendElement($dest, 'fone', $data->destinatario->telefone);
+            $this->appendElement($dest, 'email', $data->destinatario->email);
+            $parent->appendChild($dest);
         }
 
         if ($data->intermediario) {
@@ -428,27 +452,12 @@ class DpsXmlBuilder
         }
 
         $this->appendElement($ibscbs, 'tpEnteGov', $data->tipoEnteGovernamental);
-        $this->appendElement($ibscbs, 'indDest', $data->indicadorDestinatario);
-
-        if ($data->destinatario) {
-            $dest = $this->dom->createElement('dest');
-            $this->appendElement($dest, 'CNPJ', $data->destinatario->cnpj);
-            $this->appendElement($dest, 'CPF', $data->destinatario->cpf);
-            $this->appendElement($dest, 'NIF', $data->destinatario->nif);
-            $this->appendElement($dest, 'cNaoNIF', $data->destinatario->codigoNaoNif);
-            $this->appendElement($dest, 'xNome', $data->destinatario->nome);
-
-            if ($data->destinatario->endereco) {
-                $this->buildEndereco($dest, $data->destinatario->endereco);
-            }
-
-            $this->appendElement($dest, 'fone', $data->destinatario->telefone);
-            $this->appendElement($dest, 'email', $data->destinatario->email);
-            $ibscbs->appendChild($dest);
-        }
-
         if ($data->imovel) {
             $this->buildImovel($ibscbs, $data->imovel);
+        }
+
+        if ($data->condominios) {
+            $this->buildCondominios($ibscbs, $data->condominios);
         }
 
         $valores = $this->dom->createElement('valores');
@@ -483,7 +492,7 @@ class DpsXmlBuilder
             $gIbscbs->appendChild($gDif);
         }
 
-        // Na NT 009 o grupo é opcional, e vazio seria rejeitado no esquema.
+        // Na NT 009 o grupo é opcional: sem filho, não sai.
         if ($gIbscbs->hasChildNodes()) {
             $trib->appendChild($gIbscbs);
         }
@@ -519,6 +528,39 @@ class DpsXmlBuilder
         }
 
         $parent->appendChild($imovel);
+    }
+
+    private function buildCondominios(DOMElement $parent, CondominioData $data): void
+    {
+        $condominios = $this->dom->createElement('condominios');
+        $this->appendElement($condominios, 'dVencOrig', $data->dataVencimentoOriginal);
+
+        foreach ($data->cobrancas ?? [] as $cobranca) {
+            $gCobranca = $this->dom->createElement('gCobranca');
+            $this->appendElement($gCobranca, 'tpCobranca', $cobranca->tipo);
+            $this->appendElement($gCobranca, 'xTpCobranca', $cobranca->descricao);
+            $this->appendElement($gCobranca, 'vCobranca', number_format((float) $cobranca->valor, 2, '.', ''));
+
+            foreach ($cobranca->detalhes ?? [] as $detalhe) {
+                $gDetCobranca = $this->dom->createElement('gDetCobranca');
+                $this->appendElement($gDetCobranca, 'tpDetCobranca', $detalhe->tipo);
+                $this->appendElement($gDetCobranca, 'xTpDetCobranca', $detalhe->descricao);
+                $this->appendElement($gDetCobranca, 'vDetCobranca', number_format((float) $detalhe->valor, 2, '.', ''));
+                $gCobranca->appendChild($gDetCobranca);
+            }
+
+            $condominios->appendChild($gCobranca);
+        }
+
+        foreach ($data->descontos ?? [] as $desconto) {
+            $gDesconto = $this->dom->createElement('gDesconto');
+            $this->appendElement($gDesconto, 'tpDesconto', $desconto->tipo);
+            $this->appendElement($gDesconto, 'vDesconto', number_format((float) $desconto->valor, 2, '.', ''));
+            $this->appendElement($gDesconto, 'xTpDesconto', $desconto->descricao);
+            $condominios->appendChild($gDesconto);
+        }
+
+        $parent->appendChild($condominios);
     }
 
     private function buildDocumentoReembolso(DOMElement $parent, ReembolsoDocumentoData $data): void

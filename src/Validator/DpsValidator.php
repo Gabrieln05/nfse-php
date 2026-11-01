@@ -184,7 +184,7 @@ class DpsValidator
         }
 
         // Rule 554: o destinatário só deve ser identificado quando indDest = 1
-        if ($ibscbs->destinatario !== null && $ibscbs->indicadorDestinatario !== IndicadorDestinatario::DestinatarioDiverso) {
+        if ($infDps->destinatario !== null && $infDps->indicadorDestinatario !== IndicadorDestinatario::DestinatarioDiverso) {
             $errors[] = 'O destinatário do serviço só deve ser identificado quando o indicador de destinatário for 1.';
         }
 

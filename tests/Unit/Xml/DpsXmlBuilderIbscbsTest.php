@@ -6,11 +6,11 @@ use Nfse\Dto\Nfse\DpsData;
 use Nfse\Support\IdGenerator;
 use Nfse\Xml\DpsXmlBuilder;
 
-function dpsComIbscbs(array $ibscbs): DpsData
+function dpsComIbscbs(array $ibscbs, array $sobrescritas = []): DpsData
 {
     return new DpsData([
         '@attributes' => ['versao' => '1.01'],
-        'infDPS' => [
+        'infDPS' => array_replace([
             '@attributes' => ['Id' => IdGenerator::generateDpsId('12345678000199', '3550308', '1', '1001')],
             'tpAmb' => 2,
             'dhEmi' => '2026-03-10T10:00:00-03:00',
@@ -51,7 +51,7 @@ function dpsComIbscbs(array $ibscbs): DpsData
                 ],
             ],
             'IBSCBS' => $ibscbs,
-        ],
+        ], $sobrescritas),
     ]);
 }
 
@@ -67,21 +67,6 @@ it('builds a schema valid dps with the complete ibscbs group', function () {
             ],
         ],
         'tpEnteGov' => 1,
-        'indDest' => 1,
-        'dest' => [
-            'CNPJ' => '98765432000188',
-            'xNome' => 'Destinatario Exemplo Ltda',
-            'end' => [
-                'endNac' => [
-                    'cMun' => '3550308',
-                    'CEP' => '01001000',
-                ],
-                'xLgr' => 'Praca da Se',
-                'nro' => '100',
-                'xBairro' => 'Se',
-            ],
-            'email' => 'destinatario@exemplo.com.br',
-        ],
         'imovel' => [
             'cMun' => '3550308',
             'gUnidImob' => [
@@ -112,11 +97,29 @@ it('builds a schema valid dps with the complete ibscbs group', function () {
                 ],
             ],
         ],
+    ], [
+        'indDest' => 1,
+        'dest' => [
+            'CNPJ' => '98765432000188',
+            'xNome' => 'Destinatario Exemplo Ltda',
+            'end' => [
+                'endNac' => [
+                    'cMun' => '3550308',
+                    'CEP' => '01001000',
+                ],
+                'xLgr' => 'Praca da Se',
+                'nro' => '100',
+                'xBairro' => 'Se',
+            ],
+            'email' => 'destinatario@exemplo.com.br',
+        ],
     ]);
 
     $xml = (new DpsXmlBuilder)->build($dps);
 
     expect(validarContraSchema($xml, 'DPS_v1.01.xsd'))->toBeTrue()
+        ->and($xml)->toContain('</toma><indDest>1</indDest><dest><CNPJ>98765432000188</CNPJ>')
+        ->and($xml)->toContain('</dest><serv>')
         ->and($xml)->toContain('<cIndOp>010101</cIndOp>')
         ->and($xml)->toContain('<CST>200</CST><cClassTrib>200011</cClassTrib><gIBSCBS><cCredPres>01</cCredPres>')
         ->and($xml)->toContain('<gUnidImob><inscImobFisc>1234567890</inscImobFisc><end><CEP>01001000</CEP>')
@@ -126,7 +129,6 @@ it('builds a schema valid dps with the complete ibscbs group', function () {
 it('builds a schema valid dps with the minimum ibscbs group', function () {
     $dps = dpsComIbscbs([
         'cIndOp' => '010101',
-        'indDest' => 0,
         'valores' => [
             'trib' => [
                 'CST' => '000',
@@ -138,7 +140,8 @@ it('builds a schema valid dps with the minimum ibscbs group', function () {
     $xml = (new DpsXmlBuilder)->build($dps);
 
     expect(validarContraSchema($xml, 'DPS_v1.01.xsd'))->toBeTrue()
-        ->and($xml)->toContain('<IBSCBS><cIndOp>010101</cIndOp><indDest>0</indDest>')
+        ->and($xml)->toContain('</toma><indDest>0</indDest><serv>')
+        ->and($xml)->toContain('<IBSCBS><cIndOp>010101</cIndOp><valores>')
         ->and($xml)->toContain('<trib><CST>000</CST><cClassTrib>000001</cClassTrib></trib>')
         ->and($xml)->not()->toContain('<gIBSCBS>')
         ->and($xml)->not()->toContain('<gRefNFSe>')
@@ -150,7 +153,6 @@ it('builds a schema valid dps with the minimum ibscbs group', function () {
 it('uses cCIB instead of the address when the property is registered', function () {
     $dps = dpsComIbscbs([
         'cIndOp' => '010101',
-        'indDest' => 0,
         'imovel' => [
             'cMun' => '3550308',
             'gUnidImob' => [

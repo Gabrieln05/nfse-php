@@ -45,7 +45,6 @@ function ibscbsValido(array $sobrescritas = []): array
 {
     return array_replace([
         'cIndOp' => '010101',
-        'indDest' => 0,
         'valores' => [
             'trib' => [
                 'CST' => '000',
@@ -86,12 +85,13 @@ it('requires referenced nfse when the operation type is 2 or 3', function () {
 });
 
 it('rejects a destinatario when the destination indicator is not 1', function () {
-    $errors = validarDpsComIbscbs(ibscbsValido([
+    $errors = validarDpsComIbscbs(ibscbsValido(), [
+        'indDest' => 0,
         'dest' => [
             'CNPJ' => '98765432000188',
             'xNome' => 'Destinatario Exemplo Ltda',
         ],
-    ]));
+    ]);
 
     expect($errors)->toContain('O destinatário do serviço só deve ser identificado quando o indicador de destinatário for 1.');
 });

@@ -1755,6 +1755,67 @@
       <xs:enumeration value="4"/>
     </xs:restriction>
   </xs:simpleType>
+  <!-- NÃO OFICIAL (Anexo VI v1.04.01): domínios do grupo de condomínios -->
+  <xs:simpleType name="TSRTCTpCobranca">
+    <xs:restriction base="xs:string">
+      <xs:whiteSpace value="preserve"/>
+      <xs:enumeration value="01"/>
+      <xs:enumeration value="02"/>
+      <xs:enumeration value="03"/>
+      <xs:enumeration value="04"/>
+      <xs:enumeration value="05"/>
+      <xs:enumeration value="99"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="TSRTCTpDetCobranca">
+    <xs:restriction base="xs:string">
+      <xs:whiteSpace value="preserve"/>
+      <xs:enumeration value="001"/>
+      <xs:enumeration value="002"/>
+      <xs:enumeration value="003"/>
+      <xs:enumeration value="004"/>
+      <xs:enumeration value="005"/>
+      <xs:enumeration value="006"/>
+      <xs:enumeration value="007"/>
+      <xs:enumeration value="008"/>
+      <xs:enumeration value="009"/>
+      <xs:enumeration value="010"/>
+      <xs:enumeration value="011"/>
+      <xs:enumeration value="012"/>
+      <xs:enumeration value="013"/>
+      <xs:enumeration value="014"/>
+      <xs:enumeration value="015"/>
+      <xs:enumeration value="016"/>
+      <xs:enumeration value="017"/>
+      <xs:enumeration value="018"/>
+      <xs:enumeration value="019"/>
+      <xs:enumeration value="020"/>
+      <xs:enumeration value="021"/>
+      <xs:enumeration value="022"/>
+      <xs:enumeration value="023"/>
+      <xs:enumeration value="024"/>
+      <xs:enumeration value="025"/>
+      <xs:enumeration value="026"/>
+      <xs:enumeration value="027"/>
+      <xs:enumeration value="028"/>
+      <xs:enumeration value="029"/>
+      <xs:enumeration value="030"/>
+      <xs:enumeration value="031"/>
+      <xs:enumeration value="032"/>
+      <xs:enumeration value="033"/>
+      <xs:enumeration value="034"/>
+      <xs:enumeration value="035"/>
+      <xs:enumeration value="036"/>
+      <xs:enumeration value="999"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="TSRTCTpDesconto">
+    <xs:restriction base="xs:string">
+      <xs:whiteSpace value="preserve"/>
+      <xs:enumeration value="1"/>
+      <xs:enumeration value="2"/>
+    </xs:restriction>
+  </xs:simpleType>
   <xs:simpleType name="TSRTCIndDest">
     <xs:annotation>
       <xs:documentation>

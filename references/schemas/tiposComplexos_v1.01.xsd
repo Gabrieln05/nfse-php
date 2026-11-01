@@ -831,6 +831,21 @@
 					<xs:documentation>Grupo de informações do DPS relativas ao Tomador de Serviços</xs:documentation>
 				</xs:annotation>
 			</xs:element>
+			<!-- NÃO OFICIAL (Anexo VI v1.04.01): indDest e dest na raiz da DPS, NT 009 v1.01 item 2.11 -->
+			<xs:element name="indDest" type="TSRTCIndDest">
+				<xs:annotation>
+					<xs:documentation>
+						A respeito do Destinatário dos serviços
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="dest" type="TCRTCInfoDest" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>
+						Grupo de informações relativas ao Destinatário
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
 			<xs:element name="interm" type="TCInfoPessoa" minOccurs="0">
 				<xs:annotation>
 					<xs:documentation>Grupo de informações do DPS relativas ao Intermediário de Serviços</xs:documentation>
@@ -2356,20 +2371,6 @@
 					</xs:documentation>
 				</xs:annotation>
 			</xs:element>
-			<xs:element name="indDest" type="TSRTCIndDest">
-				<xs:annotation>
-					<xs:documentation>
-						A respeito do Destinatário dos serviços
-					</xs:documentation>
-				</xs:annotation>
-			</xs:element>
-			<xs:element name="dest" type="TCRTCInfoDest" minOccurs="0">
-				<xs:annotation>
-					<xs:documentation>
-						Grupo de informações relativas ao Destinatário
-					</xs:documentation>
-				</xs:annotation>
-			</xs:element>
 			<xs:element name="imovel" type="TCRTCInfoImovel" minOccurs="0">
 				<xs:annotation>
 					<xs:documentation>
@@ -2384,6 +2385,14 @@
 					</xs:documentation>
 				</xs:annotation>
 			</xs:element>
+			<!-- NÃO OFICIAL (Anexo VI v1.04.01): grupo de condomínios, NT 009 v1.01 item 2.15 -->
+			<xs:element name="condominios" type="TCRTCInfoCondominios" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>
+						Grupo de informações relativas às operações de condomínios
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
 			<xs:element name="valores" type="TCRTCInfoValoresIBSCBS">
 				<xs:annotation>
 					<xs:documentation>
@@ -2391,6 +2400,36 @@
 					</xs:documentation>
 				</xs:annotation>
 			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- NÃO OFICIAL (Anexo VI v1.04.01): tipos do grupo de condomínios -->
+	<xs:complexType name="TCRTCInfoCondominios">
+		<xs:sequence>
+			<xs:element name="dVencOrig" type="TSData"/>
+			<xs:element name="gCobranca" type="TCRTCCobrancaCondominio" maxOccurs="20"/>
+			<xs:element name="gDesconto" type="TCRTCDescontoCondominio" minOccurs="0" maxOccurs="10"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="TCRTCCobrancaCondominio">
+		<xs:sequence>
+			<xs:element name="tpCobranca" type="TSRTCTpCobranca"/>
+			<xs:element name="xTpCobranca" type="TSDesc150" minOccurs="0"/>
+			<xs:element name="vCobranca" type="TSDec15V2"/>
+			<xs:element name="gDetCobranca" type="TCRTCDetCobrancaCondominio" minOccurs="0" maxOccurs="20"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="TCRTCDetCobrancaCondominio">
+		<xs:sequence>
+			<xs:element name="tpDetCobranca" type="TSRTCTpDetCobranca"/>
+			<xs:element name="xTpDetCobranca" type="TSDesc150" minOccurs="0"/>
+			<xs:element name="vDetCobranca" type="TSDec15V2"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="TCRTCDescontoCondominio">
+		<xs:sequence>
+			<xs:element name="tpDesconto" type="TSRTCTpDesconto"/>
+			<xs:element name="vDesconto" type="TSDec15V2"/>
+			<xs:element name="xTpDesconto" type="TSDesc150"/>
 		</xs:sequence>
 	</xs:complexType>
 	<!--TIPO COMPLEXO PARA GRUPO DE NFS-E REFERENCIADAS-->

@@ -18,8 +18,21 @@ Só existe este leiaute: a DPS deixa de sair no formato da NT 004.
 -   Com `certificateContent`, o PFX vai para o cURL em memória (`CURLOPT_SSLCERT_BLOB`) nos
     três clients. Acabou o arquivo temporário, que ficava para trás se o processo morresse.
 
+-   `indDest` e `dest` saem de `IBSCBS` e vão para a raiz de `infDPS`, depois de `toma`
+    (NT 009 v1.01, item 2.11). `indDest` sai em toda DPS, com padrão `0`.
+-   Grupo `condominios` em `IBSCBS`, com novos DTOs `CondominioData`,
+    `CobrancaCondominioData`, `DetalheCobrancaData` e `DescontoCondominioData` (item 2.15).
+
+**Esquemas:** os dois itens acima não existem em nenhum XSD publicado. `references/schemas/`
+recebeu esses trechos à mão, a partir do Anexo VI v1.04.01: ver `references/schemas/LEIA-ME.md`.
+Uma DPS deste fork não passa no XSD de 20/10/2026, e só a Sefin com o release 2 aceita.
+
 **Ainda no leiaute antigo:** `vDedRed` (a NT 009 traz `vAjusteBC`) e `gReeRepRes`, que saiu
 do esquema. O uso deste fork não passa por dedução nem por reembolso.
+
+**Fora deste fork:** `indZFMALC`, `indDoacao`, `gPgtoVinc`, `tpNFSeDebito`, `tpNFSeCredito`,
+`regApIBSCBSSN`, `cAtvSN` e `gIBSCBSAjuste`, `gEstornoCred` e `gPagAntecipado`. Estão no
+Anexo VI, e a emissão de condomínio não usa nenhum deles.
 
 ### 🧾 Grupo IBS/CBS (Reforma Tributária sobre o Consumo)
 
