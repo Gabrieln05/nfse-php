@@ -4,6 +4,23 @@ All notable changes to `nfse-php` will be documented in this file.
 
 ## [Unreleased]
 
+### 🍴 Fork Gabrieln05/nfse-php: leiaute da NT 009
+
+Conforme os esquemas de Produção Restrita de 20/10/2026, agora em `references/schemas/`.
+Só existe este leiaute: a DPS deixa de sair no formato da NT 004.
+
+-   `finNFSe` sai de `IBSCBS` e vai para `infDPS`, em toda DPS, com padrão `0`.
+-   `CST` e `cClassTrib` saem de `gIBSCBS` e ficam direto em `trib`. O grupo `gIBSCBS` só
+    sai quando tem `cCredPres`, `gTribRegular` ou `gDif`.
+-   `xDescServ` fecha o `cServ`.
+-   `imovel` passa a `cMun` e `gUnidImob`, com novos DTOs `UnidadeImobiliariaData` e
+    `EnderecoImovelData`.
+-   Com `certificateContent`, o PFX vai para o cURL em memória (`CURLOPT_SSLCERT_BLOB`) nos
+    três clients. Acabou o arquivo temporário, que ficava para trás se o processo morresse.
+
+**Ainda no leiaute antigo:** `vDedRed` (a NT 009 traz `vAjusteBC`) e `gReeRepRes`, que saiu
+do esquema. O uso deste fork não passa por dedução nem por reembolso.
+
 ### 🧾 Grupo IBS/CBS (Reforma Tributária sobre o Consumo)
 
 Implementação do grupo `IBSCBS` conforme o pacote de esquemas AnexoVI v1.01.03 (NT 004),

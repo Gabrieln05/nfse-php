@@ -14,13 +14,6 @@ use Spatie\DataTransferObject\Attributes\MapFrom;
 class IbscbsData extends Dto
 {
     /**
-     * Indicador da finalidade da emissão de NFS-e.
-     * 0 - NFS-e regular
-     */
-    #[MapFrom('finNFSe')]
-    public ?string $finalidadeNfse = null;
-
-    /**
      * Indica operação de uso ou consumo pessoal (art. 57).
      * 0 - Não
      * 1 - Sim
@@ -86,13 +79,13 @@ class IbscbsData extends Dto
     /**
      * Código de Situação Tributária do IBS e da CBS.
      */
-    #[MapFrom('valores.trib.gIBSCBS.CST')]
+    #[MapFrom('valores.trib.CST')]
     public ?string $cst = null;
 
     /**
      * Código de Classificação Tributária do IBS e da CBS.
      */
-    #[MapFrom('valores.trib.gIBSCBS.cClassTrib')]
+    #[MapFrom('valores.trib.cClassTrib')]
     public ?string $codigoClassificacaoTributaria = null;
 
     /**

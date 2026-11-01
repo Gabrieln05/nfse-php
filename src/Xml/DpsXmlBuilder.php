@@ -7,6 +7,7 @@ use DOMElement;
 use Nfse\Dto\Nfse\DpsData;
 use Nfse\Dto\Nfse\EnderecoData;
 use Nfse\Dto\Nfse\IbscbsData;
+use Nfse\Dto\Nfse\ImovelData;
 use Nfse\Dto\Nfse\InfDpsData;
 use Nfse\Dto\Nfse\PrestadorData;
 use Nfse\Dto\Nfse\ReembolsoDocumentoData;
@@ -18,6 +19,9 @@ use Nfse\Support\SchemaText;
 
 class DpsXmlBuilder
 {
+    /** TSRTCFinNFSe só tem um valor: 0 = NFS-e regular. */
+    private const FIN_NFSE_REGULAR = '0';
+
     private DOMDocument $dom;
 
     public function build(DpsData $dps): string
@@ -51,7 +55,8 @@ class DpsXmlBuilder
         $this->appendElement($parent, 'dCompet', $data->dataCompetencia);
         $this->appendElement($parent, 'tpEmit', $data->tipoEmitente);
         $this->appendElement($parent, 'cMotivoEmisTI', $data->motivoEmissaoTomadorIntermediario);
-        $this->appendElement($parent, 'finNFSe', $data->finalidadeNfse);
+        // Obrigatório em toda DPS na NT 009, inclusive no Simples, que não tem IBSCBS.
+        $this->appendElement($parent, 'finNFSe', $data->finalidadeNfse ?? self::FIN_NFSE_REGULAR);
         $this->appendElement($parent, 'chNFSeRej', $data->chaveNfseRejeitada);
         $this->appendElement($parent, 'cLocEmi', $data->codigoLocalEmissao);
 
@@ -91,9 +96,7 @@ class DpsXmlBuilder
         }
 
         if ($data->servico) {
-            // finNFSe é obrigatório no leiaute da NT 009 e não existe no anterior,
-            // então indica qual ordem de campos usar em cServ.
-            $this->buildServico($parent, $data->servico, $data->finalidadeNfse !== null);
+            $this->buildServico($parent, $data->servico);
         }
 
         if ($data->valores) {
@@ -154,19 +157,11 @@ class DpsXmlBuilder
         $parent->appendChild($toma);
     }
 
-    /**
-     * O endereço simples (obra, evento e imóvel) traz o CEP direto no lugar do grupo
-     * endNac e não informa o país no endereço no exterior.
-     */
-    private function buildEndereco(DOMElement $parent, EnderecoData $data, bool $enderecoSimples = false): void
+    private function buildEndereco(DOMElement $parent, EnderecoData $data): void
     {
         $end = $this->dom->createElement('end');
 
-        if ($enderecoSimples) {
-            if (! $data->enderecoExterior) {
-                $this->appendElement($end, 'CEP', $data->cep);
-            }
-        } elseif ($data->codigoMunicipio || $data->cep) {
+        if ($data->codigoMunicipio || $data->cep) {
             $endNac = $this->dom->createElement('endNac');
             $this->appendElement($endNac, 'cMun', $data->codigoMunicipio);
             $this->appendElement($endNac, 'CEP', $data->cep);
@@ -175,9 +170,7 @@ class DpsXmlBuilder
 
         if ($data->enderecoExterior) {
             $endExt = $this->dom->createElement('endExt');
-            if (! $enderecoSimples) {
-                $this->appendElement($endExt, 'cPais', $data->enderecoExterior->codigoPais);
-            }
+            $this->appendElement($endExt, 'cPais', $data->enderecoExterior->codigoPais);
             $this->appendElement($endExt, 'cEndPost', $data->enderecoExterior->codigoEnderecamentoPostal);
             $this->appendElement($endExt, 'xCidade', $data->enderecoExterior->cidade);
             $this->appendElement($endExt, 'xEstProvReg', $data->enderecoExterior->estadoProvinciaRegiao);
@@ -192,7 +185,7 @@ class DpsXmlBuilder
         $parent->appendChild($end);
     }
 
-    private function buildServico(DOMElement $parent, ServicoData $data, bool $leiauteNt009 = false): void
+    private function buildServico(DOMElement $parent, ServicoData $data): void
     {
         $serv = $this->dom->createElement('serv');
 
@@ -210,15 +203,9 @@ class DpsXmlBuilder
             $cServ = $this->dom->createElement('cServ');
             $this->appendElement($cServ, 'cTribNac', $data->codigoServico->codigoTributacaoNacional);
             $this->appendElement($cServ, 'cTribMun', $data->codigoServico->codigoTributacaoMunicipal);
-            // A NT 009 moveu xDescServ para depois de cNBS/cIntContrib.
-            if (! $leiauteNt009) {
-                $this->appendElement($cServ, 'xDescServ', $data->codigoServico->descricaoServico);
-            }
             $this->appendElement($cServ, 'cNBS', $data->codigoServico->codigoNbs);
             $this->appendElement($cServ, 'cIntContrib', $data->codigoServico->codigoInternoContribuinte);
-            if ($leiauteNt009) {
-                $this->appendElement($cServ, 'xDescServ', $data->codigoServico->descricaoServico);
-            }
+            $this->appendElement($cServ, 'xDescServ', $data->codigoServico->descricaoServico);
             $serv->appendChild($cServ);
         }
 
@@ -428,7 +415,6 @@ class DpsXmlBuilder
     {
         $ibscbs = $this->dom->createElement('IBSCBS');
 
-        $this->appendElement($ibscbs, 'finNFSe', $data->finalidadeNfse);
         $this->appendElement($ibscbs, 'indFinal', $data->indicadorUsoConsumoPessoal);
         $this->appendElement($ibscbs, 'cIndOp', $data->codigoIndicadorOperacao);
         $this->appendElement($ibscbs, 'tpOper', $data->tipoOperacao);
@@ -462,16 +448,7 @@ class DpsXmlBuilder
         }
 
         if ($data->imovel) {
-            $imovel = $this->dom->createElement('imovel');
-            $this->appendElement($imovel, 'inscImobFisc', $data->imovel->inscricaoImobiliariaFiscal);
-
-            if ($data->imovel->codigoCib) {
-                $this->appendElement($imovel, 'cCIB', $data->imovel->codigoCib);
-            } elseif ($data->imovel->endereco) {
-                $this->buildEndereco($imovel, $data->imovel->endereco, true);
-            }
-
-            $ibscbs->appendChild($imovel);
+            $this->buildImovel($ibscbs, $data->imovel);
         }
 
         $valores = $this->dom->createElement('valores');
@@ -485,9 +462,10 @@ class DpsXmlBuilder
         }
 
         $trib = $this->dom->createElement('trib');
+        $this->appendElement($trib, 'CST', $data->cst);
+        $this->appendElement($trib, 'cClassTrib', $data->codigoClassificacaoTributaria);
+
         $gIbscbs = $this->dom->createElement('gIBSCBS');
-        $this->appendElement($gIbscbs, 'CST', $data->cst);
-        $this->appendElement($gIbscbs, 'cClassTrib', $data->codigoClassificacaoTributaria);
         $this->appendElement($gIbscbs, 'cCredPres', $data->codigoCreditoPresumido);
 
         if ($data->cstTributacaoRegular) {
@@ -505,11 +483,42 @@ class DpsXmlBuilder
             $gIbscbs->appendChild($gDif);
         }
 
-        $trib->appendChild($gIbscbs);
+        // Na NT 009 o grupo é opcional, e vazio seria rejeitado no esquema.
+        if ($gIbscbs->hasChildNodes()) {
+            $trib->appendChild($gIbscbs);
+        }
+
         $valores->appendChild($trib);
         $ibscbs->appendChild($valores);
 
         $parent->appendChild($ibscbs);
+    }
+
+    private function buildImovel(DOMElement $parent, ImovelData $data): void
+    {
+        $imovel = $this->dom->createElement('imovel');
+        $this->appendElement($imovel, 'cMun', $data->codigoMunicipio);
+
+        foreach ($data->unidades ?? [] as $unidade) {
+            $gUnidImob = $this->dom->createElement('gUnidImob');
+            $this->appendElement($gUnidImob, 'inscImobFisc', $unidade->inscricaoImobiliariaFiscal);
+
+            if ($unidade->codigoCib) {
+                $this->appendElement($gUnidImob, 'cCIB', $unidade->codigoCib);
+            } elseif ($unidade->endereco) {
+                $end = $this->dom->createElement('end');
+                $this->appendElement($end, 'CEP', $unidade->endereco->cep);
+                $this->appendElement($end, 'xLgr', $unidade->endereco->logradouro);
+                $this->appendElement($end, 'nro', $unidade->endereco->numero);
+                $this->appendElement($end, 'xCpl', $unidade->endereco->complemento);
+                $this->appendElement($end, 'xBairro', $unidade->endereco->bairro);
+                $gUnidImob->appendChild($end);
+            }
+
+            $imovel->appendChild($gUnidImob);
+        }
+
+        $parent->appendChild($imovel);
     }
 
     private function buildDocumentoReembolso(DOMElement $parent, ReembolsoDocumentoData $data): void

@@ -3,8 +3,10 @@
 namespace Nfse\Tests\Unit\Xml;
 
 use Nfse\Dto\Nfse\DpsData;
+use Nfse\Dto\Nfse\IbscbsData;
 use Nfse\Support\IdGenerator;
 use Nfse\Xml\DpsXmlBuilder;
+use Nfse\Xml\NfseXmlParser;
 
 function dpsLeiauteNt009(?string $finNfse, ?string $motivoEmisTI = null): DpsData
 {
@@ -57,11 +59,13 @@ function dpsLeiauteNt009(?string $finNfse, ?string $motivoEmisTI = null): DpsDat
     ]);
 }
 
-it('writes the NT 009 layout when finNFSe is informed', function () {
-    $xml = (new DpsXmlBuilder)->build(dpsLeiauteNt009('0'));
+it('always writes the NT 009 layout', function () {
+    $xml = (new DpsXmlBuilder)->build(dpsLeiauteNt009(null));
 
     expect($xml)->toContain('<tpEmit>1</tpEmit><finNFSe>0</finNFSe><cLocEmi>3550308</cLocEmi>')
-        ->and($xml)->toContain('<cNBS>115031000</cNBS><xDescServ>Hospedagem de sites</xDescServ></cServ>');
+        ->and($xml)->toContain('<cNBS>115031000</cNBS><xDescServ>Hospedagem de sites</xDescServ></cServ>')
+        ->and(substr_count($xml, '<finNFSe>'))->toBe(1)
+        ->and(validarContraSchema($xml, 'DPS_v1.01.xsd'))->toBeTrue();
 });
 
 it('writes finNFSe after cMotivoEmisTI', function () {
@@ -70,10 +74,20 @@ it('writes finNFSe after cMotivoEmisTI', function () {
     expect($xml)->toContain('<tpEmit>1</tpEmit><cMotivoEmisTI>4</cMotivoEmisTI><finNFSe>0</finNFSe><cLocEmi>');
 });
 
-it('keeps the current layout when finNFSe is not informed', function () {
-    $xml = (new DpsXmlBuilder)->build(dpsLeiauteNt009(null));
+it('reads the IBS and CBS classification back from the NT 009 layout', function () {
+    $dps = dpsLeiauteNt009('0');
+    $dps->infDps->ibscbs = new IbscbsData([
+        'indDest' => 0,
+        'valores' => ['trib' => ['CST' => '200', 'cClassTrib' => '200046']],
+        'imovel' => ['cMun' => '3550308', 'gUnidImob' => ['end' => ['CEP' => '01001000', 'xLgr' => 'Rua A', 'nro' => '1']]],
+    ]);
+    $xml = (new DpsXmlBuilder)->build($dps);
 
-    expect($xml)->not->toContain('finNFSe')
-        ->and($xml)->toContain('<cTribNac>010701</cTribNac><xDescServ>Hospedagem de sites</xDescServ><cNBS>115031000</cNBS>')
-        ->and(validarContraSchema($xml, 'DPS_v1.01.xsd'))->toBeTrue();
+    $nfse = (new NfseXmlParser)->parse('<NFSe xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.01"><infNFSe Id="NFS123">'.$xml.'</infNFSe></NFSe>');
+    $lido = $nfse->infNfse->dps->infDps;
+
+    expect($lido->finalidadeNfse)->toBe('0')
+        ->and($lido->ibscbs->cst)->toBe('200')
+        ->and($lido->ibscbs->codigoClassificacaoTributaria)->toBe('200046')
+        ->and($lido->ibscbs->imovel->unidades[0]->endereco->cep)->toBe('01001000');
 });

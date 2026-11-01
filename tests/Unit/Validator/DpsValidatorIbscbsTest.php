@@ -44,15 +44,12 @@ function validarDpsComIbscbs(array $ibscbs, array $sobrescritas = []): array
 function ibscbsValido(array $sobrescritas = []): array
 {
     return array_replace([
-        'finNFSe' => '0',
         'cIndOp' => '010101',
         'indDest' => 0,
         'valores' => [
             'trib' => [
-                'gIBSCBS' => [
-                    'CST' => '000',
-                    'cClassTrib' => '000001',
-                ],
+                'CST' => '000',
+                'cClassTrib' => '000001',
             ],
         ],
     ], $sobrescritas);
@@ -103,10 +100,8 @@ it('rejects a cClassTrib outside the informed cst group', function () {
     $errors = validarDpsComIbscbs(ibscbsValido([
         'valores' => [
             'trib' => [
-                'gIBSCBS' => [
-                    'CST' => '200',
-                    'cClassTrib' => '000001',
-                ],
+                'CST' => '200',
+                'cClassTrib' => '000001',
             ],
         ],
     ]));
@@ -128,10 +123,8 @@ it('validates the reimbursement documents', function () {
                 ],
             ],
             'trib' => [
-                'gIBSCBS' => [
-                    'CST' => '000',
-                    'cClassTrib' => '000001',
-                ],
+                'CST' => '000',
+                'cClassTrib' => '000001',
             ],
         ],
     ]));
