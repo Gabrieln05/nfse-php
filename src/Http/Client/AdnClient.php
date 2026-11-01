@@ -290,7 +290,7 @@ class AdnClient implements AdnDanfseInterface
     private function handleException(\GuzzleHttp\Exception\RequestException|\Exception $e)
     {
         $responseBody = '';
-        if ($e->hasResponse()) {
+        if ($e instanceof \GuzzleHttp\Exception\BadResponseException) {
             $responseBody = $e->getResponse()->getBody()->getContents();
         }
 

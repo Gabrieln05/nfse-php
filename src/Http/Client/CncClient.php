@@ -132,7 +132,7 @@ class CncClient
     private function handleException(\Exception|GuzzleException $e)
     {
         $errorBody = '';
-        if ($e instanceof \GuzzleHttp\Exception\RequestException && $e->hasResponse()) {
+        if ($e instanceof \GuzzleHttp\Exception\BadResponseException) {
             $errorBody = $e->getResponse()->getBody()->getContents();
         }
 
