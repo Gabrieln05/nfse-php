@@ -26,6 +26,13 @@ Só existe este leiaute: a DPS deixa de sair no formato da NT 004.
     (NT 009 v1.01, item 2.11). `indDest` sai em toda DPS, com padrão `0`.
 -   Grupo `condominios` em `IBSCBS`, com novos DTOs `CondominioData`,
     `CobrancaCondominioData`, `DetalheCobrancaData` e `DescontoCondominioData` (item 2.15).
+-   `new DpsXmlBuilder(LeiauteDps::Release1)` põe `indDest` e `dest` dentro de `IBSCBS`, depois
+    de `tpEnteGov`, como o XSD de Produção Restrita de 20/10/2026, que segue em
+    `references/schemas-release1/` sem alteração. Em 11/11/2026 a Produção Restrita recusou o
+    leiaute da v1.01 com E1235 e aceitou este. O padrão continua `LeiauteDps::V101`.
+-   Grupo `gLocacao` em `imovel`, depois de `cMun`, com o novo DTO `LocacaoImovelData`
+    (`pCopropriedade`, `vTotOper`, `vDescIncondTot`, `vDescCondTot` e `dVencOrig`). A Sefin o
+    exige no subitem 99.03 (E0937).
 
 **Esquemas:** os dois itens acima não existem em nenhum XSD publicado. `references/schemas/`
 recebeu esses trechos à mão, a partir do Anexo VI v1.04.01: ver `references/schemas/LEIA-ME.md`.

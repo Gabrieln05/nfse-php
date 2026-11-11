@@ -16,6 +16,12 @@ class ImovelData extends Dto
     public ?string $codigoMunicipio = null;
 
     /**
+     * Locação, cessão onerosa ou arrendamento do imóvel. Obrigatório no subitem 99.03 (E0937).
+     */
+    #[MapFrom('gLocacao')]
+    public ?LocacaoImovelData $locacao = null;
+
+    /**
      * Unidades imobiliárias objeto da operação.
      *
      * @var UnidadeImobiliariaData[]|null

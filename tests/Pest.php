@@ -133,10 +133,10 @@ if (! function_exists('validarContraSchema')) {
      * aceitas pela gramática de expressões do XML Schema e impedem o libxml de compilar o
      * esquema. A cópia usada aqui substitui apenas esses padrões.
      */
-    function validarContraSchema(string $xml, string $schema): bool
+    function validarContraSchema(string $xml, string $schema, string $pasta = 'schemas'): bool
     {
-        $origem = __DIR__.'/../references/schemas';
-        $destino = sys_get_temp_dir().'/nfse-php-schemas';
+        $origem = __DIR__.'/../references/'.$pasta;
+        $destino = sys_get_temp_dir().'/nfse-php-'.$pasta;
 
         if (! is_dir($destino)) {
             mkdir($destino, 0777, true);

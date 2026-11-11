@@ -15,6 +15,7 @@ use Nfse\Dto\Nfse\ReembolsoDocumentoData;
 use Nfse\Dto\Nfse\ServicoData;
 use Nfse\Dto\Nfse\TomadorData;
 use Nfse\Dto\Nfse\ValoresData;
+use Nfse\Enums\LeiauteDps;
 use Nfse\Enums\OpcaoSimplesNacional;
 use Nfse\Support\SchemaText;
 
@@ -27,6 +28,11 @@ class DpsXmlBuilder
     private const IND_DEST_TOMADOR = '0';
 
     private DOMDocument $dom;
+
+    /**
+     * @param  LeiauteDps  $leiaute  onde vão indDest e dest: na raiz (V101) ou em IBSCBS (Release1)
+     */
+    public function __construct(private LeiauteDps $leiaute = LeiauteDps::V101) {}
 
     public function build(DpsData $dps): string
     {
@@ -81,23 +87,8 @@ class DpsXmlBuilder
         }
 
         // Obrigatório na raiz da DPS desde a NT 009 v1.01, que o tirou de IBSCBS.
-        $this->appendElement($parent, 'indDest', $data->indicadorDestinatario ?? self::IND_DEST_TOMADOR);
-
-        if ($data->destinatario) {
-            $dest = $this->dom->createElement('dest');
-            $this->appendElement($dest, 'CNPJ', $data->destinatario->cnpj);
-            $this->appendElement($dest, 'CPF', $data->destinatario->cpf);
-            $this->appendElement($dest, 'NIF', $data->destinatario->nif);
-            $this->appendElement($dest, 'cNaoNIF', $data->destinatario->codigoNaoNif);
-            $this->appendElement($dest, 'xNome', $data->destinatario->nome);
-
-            if ($data->destinatario->endereco) {
-                $this->buildEndereco($dest, $data->destinatario->endereco);
-            }
-
-            $this->appendElement($dest, 'fone', $data->destinatario->telefone);
-            $this->appendElement($dest, 'email', $data->destinatario->email);
-            $parent->appendChild($dest);
+        if ($this->leiaute === LeiauteDps::V101) {
+            $this->buildDestinatario($parent, $data);
         }
 
         if ($data->intermediario) {
@@ -128,7 +119,33 @@ class DpsXmlBuilder
         }
 
         if ($data->ibscbs) {
-            $this->buildIbscbs($parent, $data->ibscbs);
+            $this->buildIbscbs($parent, $data->ibscbs, $data);
+        }
+    }
+
+    /**
+     * indDest e dest: na raiz de infDPS no V101, em IBSCBS no Release1. Os dados vêm de infDPS
+     * nos dois leiautes.
+     */
+    private function buildDestinatario(DOMElement $parent, InfDpsData $data): void
+    {
+        $this->appendElement($parent, 'indDest', $data->indicadorDestinatario ?? self::IND_DEST_TOMADOR);
+
+        if ($data->destinatario) {
+            $dest = $this->dom->createElement('dest');
+            $this->appendElement($dest, 'CNPJ', $data->destinatario->cnpj);
+            $this->appendElement($dest, 'CPF', $data->destinatario->cpf);
+            $this->appendElement($dest, 'NIF', $data->destinatario->nif);
+            $this->appendElement($dest, 'cNaoNIF', $data->destinatario->codigoNaoNif);
+            $this->appendElement($dest, 'xNome', $data->destinatario->nome);
+
+            if ($data->destinatario->endereco) {
+                $this->buildEndereco($dest, $data->destinatario->endereco);
+            }
+
+            $this->appendElement($dest, 'fone', $data->destinatario->telefone);
+            $this->appendElement($dest, 'email', $data->destinatario->email);
+            $parent->appendChild($dest);
         }
     }
 
@@ -435,7 +452,7 @@ class DpsXmlBuilder
         $parent->appendChild($valores);
     }
 
-    private function buildIbscbs(DOMElement $parent, IbscbsData $data): void
+    private function buildIbscbs(DOMElement $parent, IbscbsData $data, InfDpsData $infDps): void
     {
         $ibscbs = $this->dom->createElement('IBSCBS');
 
@@ -452,6 +469,12 @@ class DpsXmlBuilder
         }
 
         $this->appendElement($ibscbs, 'tpEnteGov', $data->tipoEnteGovernamental);
+
+        // XSD de 20/10/2026 (release 1): indDest e dest ainda moram aqui.
+        if ($this->leiaute === LeiauteDps::Release1) {
+            $this->buildDestinatario($ibscbs, $infDps);
+        }
+
         if ($data->imovel) {
             $this->buildImovel($ibscbs, $data->imovel);
         }
@@ -507,6 +530,16 @@ class DpsXmlBuilder
     {
         $imovel = $this->dom->createElement('imovel');
         $this->appendElement($imovel, 'cMun', $data->codigoMunicipio);
+
+        if ($data->locacao) {
+            $gLocacao = $this->dom->createElement('gLocacao');
+            $this->appendElement($gLocacao, 'pCopropriedade', $this->decimal($data->locacao->percentualCopropriedade));
+            $this->appendElement($gLocacao, 'vTotOper', $this->decimal($data->locacao->valorTotalOperacao));
+            $this->appendElement($gLocacao, 'vDescIncondTot', $this->decimal($data->locacao->valorTotalDescontoIncondicionado));
+            $this->appendElement($gLocacao, 'vDescCondTot', $this->decimal($data->locacao->valorTotalDescontoCondicionado));
+            $this->appendElement($gLocacao, 'dVencOrig', $data->locacao->dataVencimentoOriginal);
+            $imovel->appendChild($gLocacao);
+        }
 
         foreach ($data->unidades ?? [] as $unidade) {
             $gUnidImob = $this->dom->createElement('gUnidImob');
@@ -603,6 +636,11 @@ class DpsXmlBuilder
         $this->appendElement($documentos, 'vlrReeRepRes', $data->valorReembolso !== null ? number_format($data->valorReembolso, 2, '.', '') : null);
 
         $parent->appendChild($documentos);
+    }
+
+    private function decimal(?float $valor): ?string
+    {
+        return $valor === null ? null : number_format($valor, 2, '.', '');
     }
 
     private function appendElement(DOMElement $parent, string $name, mixed $value): void
